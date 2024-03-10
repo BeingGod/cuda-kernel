@@ -1,0 +1,8 @@
+CompileFlags:
+  Add:
+    - -nocudalib
+    - -std=c++17
+  Remove: 
+    - --generate-code=*
+    - -forward-unknown-to-host-compiler
+  Compiler: nvcc
