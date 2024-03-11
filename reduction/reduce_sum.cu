@@ -274,6 +274,76 @@ __global__ void reduce_sum_gpu_6_1(const DATATYPE *a, DATATYPE *b, size_t len) {
   }
 }
 
+__inline__ __device__ DATATYPE warp_allreduce_sum(DATATYPE val) {
+#pragma unroll
+  for (int offset = warpSize / 2; offset > 0; offset = offset >> 1) {
+    val += __shfl_xor_sync(FULL_MASK, val, offset);
+  }
+
+  return val;
+}
+
+__inline__ __device__ DATATYPE block_allreduce_sum(DATATYPE val) {
+  __shared__ DATATYPE s_tmp[32];
+
+  int wid = threadIdx.x / warpSize;
+  int lane = threadIdx.x % warpSize;
+
+  val = warp_allreduce_sum(val);
+
+  if (lane == 0) {
+    s_tmp[wid] = val;
+  }
+
+  __syncthreads();
+
+  val = (threadIdx.x < blockDim.x / warpSize) ? s_tmp[lane] : 0;
+
+  if (wid == 0) {
+    val = warp_allreduce_sum(val);
+  }
+
+  return val;
+}
+
+__global__ void reduce_sum_gpu_7(const DATATYPE *a, DATATYPE *b, size_t len) {
+  if (threadIdx.x == 0 && blockIdx.x == 0) {
+    b[0] = 0;
+  }
+  auto tid = threadIdx.x;
+  auto idx = (blockDim.x * 2) * blockIdx.x + threadIdx.x;
+  double sum = 0;
+  for (int i = idx; i < len; i += blockDim.x * 2 * gridDim.x) {
+    sum += a[i] + a[i + blockDim.x];
+  }
+
+  sum = block_allreduce_sum(sum);
+
+  if (tid == 0) {
+    atomicAdd(b, sum);
+  }
+}
+
+__global__ void reduce_sum_gpu_7_1(const DATATYPE *a, DATATYPE *b, size_t len) {
+  if (threadIdx.x == 0 && blockIdx.x == 0) {
+    b[0] = 0;
+  }
+  auto tid = threadIdx.x;
+  auto idx = blockDim.x * blockIdx.x + threadIdx.x;
+  double sum = 0;
+  float4 val;
+  for (int i = idx; i < len / 4; i += blockDim.x * gridDim.x) {
+    val = CONST_FLOAT4(a)[i];
+    sum += ((val.x + val.y) + (val.z + val.w));
+  }
+
+  sum = block_allreduce_sum(sum);
+
+  if (tid == 0) {
+    atomicAdd(b, sum);
+  }
+}
+
 void init_random(DATATYPE *data, size_t len) {
   for (size_t i = 0; i < len; ++i) {
     // data[i] =
@@ -349,6 +419,20 @@ void reduce_sum_6_1(const DATATYPE *d_a, DATATYPE *d_b, DATATYPE *d_c,
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
+void reduce_sum_7(const DATATYPE *d_a, DATATYPE *d_b, DATATYPE *d_c,
+                  size_t len) {
+  reduce_sum_gpu_7<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(d_a, d_c, len);
+  CHECK_CUDA_ERROR(cudaGetLastError());
+}
+
+void reduce_sum_7_1(const DATATYPE *d_a, DATATYPE *d_b, DATATYPE *d_c,
+                    size_t len) {
+  reduce_sum_gpu_7_1<<<
+      MIN((len / 4 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, 2048),
+      THREADS_PER_BLOCK>>>(d_a, d_c, len);
+  CHECK_CUDA_ERROR(cudaGetLastError());
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::cout << "[Useage] " << argv[0] << " "
@@ -380,14 +464,16 @@ int main(int argc, char *argv[]) {
     reduce_sum_1(d_a, d_b, d_c, len);
   }
 
-  // BENCHMARK(reduce_sum_1, TEST_ITER, d_a, d_b, d_c, len);
-  // BENCHMARK(reduce_sum_2, TEST_ITER, d_a, d_b, d_c, len);
-  // BENCHMARK(reduce_sum_3, TEST_ITER, d_a, d_b, d_c, len);
-  // BENCHMARK(reduce_sum_4, TEST_ITER, d_a, d_b, d_c, len);
-  // BENCHMARK(reduce_sum_5, TEST_ITER, d_a, d_b, d_c, len);
-  // BENCHMARK(reduce_sum_5_1, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_1, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_2, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_3, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_4, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_5, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_5_1, TEST_ITER, d_a, d_b, d_c, len);
   BENCHMARK(reduce_sum_6, TEST_ITER, d_a, d_b, d_c, len);
-  // BENCHMARK(reduce_sum_6_1, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_6_1, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_7, TEST_ITER, d_a, d_b, d_c, len);
+  BENCHMARK(reduce_sum_7_1, TEST_ITER, d_a, d_b, d_c, len);
 
   CHECK_CUDA_ERROR(
       cudaMemcpy(gpu_c, d_c, sizeof(DATATYPE) * 1, cudaMemcpyDeviceToHost));
