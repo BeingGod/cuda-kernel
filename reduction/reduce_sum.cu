@@ -204,31 +204,34 @@ __global__ void reduce_sum_gpu_5_1(const DATATYPE *a, DATATYPE *b, size_t len) {
   }
 }
 
-__inline__ __device__ int warp_reduce_sum(int val) {
+__inline__ __device__ DATATYPE warp_reduce_sum(DATATYPE val) {
 #pragma unroll
-  for (int offset = warpSize / 2; offset > 0; offset /= 2)
+  for (int offset = warpSize / 2; offset > 0; offset = offset >> 1) {
     val += __shfl_down_sync(FULL_MASK, val, offset);
+  }
+
   return val;
 }
 
-__inline__ __device__ int block_reduce_sum(int val) {
+__inline__ __device__ DATATYPE block_reduce_sum(DATATYPE val) {
+  __shared__ DATATYPE s_tmp[32];
 
-  static __shared__ int shared[32]; // Shared mem for 32 partial sums
-  int lane = threadIdx.x % warpSize;
   int wid = threadIdx.x / warpSize;
+  int lane = threadIdx.x % warpSize;
 
-  val = warp_reduce_sum(val); // Each warp performs partial reduction
+  val = warp_reduce_sum(val);
 
-  if (lane == 0)
-    shared[wid] = val; // Write reduced value to shared memory
+  if (lane == 0) {
+    s_tmp[wid] = val;
+  }
 
-  __syncthreads(); // Wait for all partial reductions
+  __syncthreads();
 
-  // read from shared memory only if that warp existed
-  val = (threadIdx.x < blockDim.x / warpSize) ? shared[lane] : 0;
+  val = (threadIdx.x < blockDim.x / warpSize) ? s_tmp[lane] : 0;
 
-  if (wid == 0)
-    val = warp_reduce_sum(val); // Final reduce within first warp
+  if (wid == 0) {
+    val = warp_reduce_sum(val);
+  }
 
   return val;
 }
@@ -377,14 +380,14 @@ int main(int argc, char *argv[]) {
     reduce_sum_1(d_a, d_b, d_c, len);
   }
 
-  BENCHMARK(reduce_sum_1, TEST_ITER, d_a, d_b, d_c, len);
-  BENCHMARK(reduce_sum_2, TEST_ITER, d_a, d_b, d_c, len);
-  BENCHMARK(reduce_sum_3, TEST_ITER, d_a, d_b, d_c, len);
-  BENCHMARK(reduce_sum_4, TEST_ITER, d_a, d_b, d_c, len);
-  BENCHMARK(reduce_sum_5, TEST_ITER, d_a, d_b, d_c, len);
-  BENCHMARK(reduce_sum_5_1, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_1, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_2, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_3, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_4, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_5, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_5_1, TEST_ITER, d_a, d_b, d_c, len);
   BENCHMARK(reduce_sum_6, TEST_ITER, d_a, d_b, d_c, len);
-  BENCHMARK(reduce_sum_6_1, TEST_ITER, d_a, d_b, d_c, len);
+  // BENCHMARK(reduce_sum_6_1, TEST_ITER, d_a, d_b, d_c, len);
 
   CHECK_CUDA_ERROR(
       cudaMemcpy(gpu_c, d_c, sizeof(DATATYPE) * 1, cudaMemcpyDeviceToHost));
