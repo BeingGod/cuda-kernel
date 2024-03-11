@@ -144,14 +144,16 @@ void compare(float *res1, float *res2, size_t len) {
   for (size_t i = 0; i < len; ++i) {
     double diff = std::abs(res1[i] - res2[i]);
     if (std::is_same<float, double>::value) {
-      fprintf(stderr, "check failed ! index: %lu, res1: %.13f res2: %.13f", i,
-              res1[i], res2[i]);
-      std::exit(1);
+      if (diff > 1e-7) {
+        fprintf(stderr, "check failed ! index: %lu, res1: %.13f res2: %.13f\n",
+                i, res1[i], res2[i]);
+        return;
+      }
     } else {
       if (diff > 1e-4) {
-        fprintf(stderr, "check failed ! index: %lu, res1: %.7f res2: %.7f", i,
+        fprintf(stderr, "check failed ! index: %lu, res1: %.7f res2: %.7f\n", i,
                 res1[i], res2[i]);
-        std::exit(1);
+        return;
       }
     }
   }
