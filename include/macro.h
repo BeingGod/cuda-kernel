@@ -11,10 +11,8 @@
 
 #define FULL_MASK 0xffffffff
 
-#define MAX_BLOCKS 65536
 #define THREADS_PER_BLOCK 128
-#define BLOCKS_PER_GRID(n)                                                     \
-  (MIN((((n) + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK), MAX_BLOCKS))
+#define BLOCKS_PER_GRID(n) (((n) + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK)
 
 // CUDA: grid stride looping
 #define CUDA_KERNEL_LOOP(i, n)                                                 \
