@@ -135,8 +135,10 @@ void rms_norm_kernel_cpu(T *__restrict__ out, const T *__restrict__ input,
 
 void init_random(float *data, size_t len) {
   for (size_t i = 0; i < len; ++i) {
-    // data[i] = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-    data[i] = 0.0001f * data[i];
+    // Init data by ascending order, to avoid big-floating eaten small-floating
+    data[i] = 0.0001f * i;
+    // It will check faild due to big-floating eaten small-floating
+    // data[i] = 0.0001f * (len * 1.0f - static_cast<size_t>(i));
   }
 }
 
@@ -217,14 +219,14 @@ int main(int argc, char *argv[]) {
         d_out, d_input, d_weight, epsilon, num_tokens, hidden_size);
   }
 
+  rms_norm_kernel_cpu<float>(cpu_out, input, weight, epsilon, num_tokens,
+                             hidden_size);
+
   BENCHMARK(rms_norm_gpu_1, TEST_ITER, d_out, d_input, d_weight, epsilon,
             num_tokens, hidden_size);
-
   CHECK_CUDA_ERROR(cudaMemcpy(gpu_out, d_out,
                               num_tokens * hidden_size * sizeof(float),
                               cudaMemcpyDeviceToHost));
-  rms_norm_kernel_cpu<float>(cpu_out, input, weight, epsilon, num_tokens,
-                             hidden_size);
   compare(gpu_out, cpu_out, num_tokens * hidden_size);
 
   BENCHMARK(rms_norm_gpu_2, TEST_ITER, d_out, d_input, d_weight, epsilon,
@@ -233,8 +235,6 @@ int main(int argc, char *argv[]) {
   CHECK_CUDA_ERROR(cudaMemcpy(gpu_out, d_out,
                               num_tokens * hidden_size * sizeof(float),
                               cudaMemcpyDeviceToHost));
-  rms_norm_kernel_cpu<float>(cpu_out, input, weight, epsilon, num_tokens,
-                             hidden_size);
   compare(gpu_out, cpu_out, num_tokens * hidden_size);
 
   return 0;
