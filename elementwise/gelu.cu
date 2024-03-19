@@ -103,18 +103,21 @@ void init_random(float *data, size_t len) {
 
 void gelu_gpu_naive(const float *x, float *y, size_t len) {
   gelu_kernel_gpu_naive<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(x, y, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void gelu_gpu_1(const float *x, float *y, size_t len) {
   gelu_kernel_gpu_opt1<<<BLOCKS_PER_GRID(len) / 4, THREADS_PER_BLOCK>>>(x, y,
                                                                         len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void gelu_gpu_2(const float *x, float *y, size_t len) {
   gelu_kernel_gpu_opt2<<<BLOCKS_PER_GRID(len) / 4, THREADS_PER_BLOCK>>>(x, y,
                                                                         len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 

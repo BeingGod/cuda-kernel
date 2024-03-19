@@ -373,6 +373,7 @@ void compare(float res1, float res2) {
 void reduce_sum_gpu_1(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_1<<<1, THREADS_PER_BLOCK,
                             sizeof(float) * THREADS_PER_BLOCK>>>(d_a, d_c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -388,24 +389,28 @@ void reduce_sum_gpu_2(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_2<<<1, threads_per_block,
                             sizeof(float) * threads_per_block>>>(
       d_b, d_c, BLOCKS_PER_GRID(len));
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void reduce_sum_gpu_3(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_3<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(d_a, d_c,
                                                                        len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void reduce_sum_gpu_4(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_4<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(d_a, d_c,
                                                                        len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void reduce_sum_gpu_5(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_5<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(d_a, d_c,
                                                                        len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -413,12 +418,14 @@ void reduce_sum_gpu_5_1(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_5_1<<<
       MIN((len / 4 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, 2048),
       THREADS_PER_BLOCK>>>(d_a, d_c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void reduce_sum_gpu_6(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_6<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(d_a, d_c,
                                                                        len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -426,12 +433,14 @@ void reduce_sum_gpu_6_1(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_6_1<<<
       MIN((len / 4 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, 2048),
       THREADS_PER_BLOCK>>>(d_a, d_c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
 void reduce_sum_gpu_7(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_7<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(d_a, d_c,
                                                                        len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -439,6 +448,7 @@ void reduce_sum_gpu_7_1(const float *d_a, float *d_b, float *d_c, size_t len) {
   reduce_sum_kernel_gpu_7_1<<<
       MIN((len / 4 + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, 2048),
       THREADS_PER_BLOCK>>>(d_a, d_c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 

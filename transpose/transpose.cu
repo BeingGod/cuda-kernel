@@ -107,6 +107,7 @@ void transpose_gpu_1(const float *a, float *b, const int m, const int n) {
   dim3 block_dim(TILE_DIM, TILE_DIM);
 
   transpose_kernel_gpu_1<<<grid_dim, block_dim>>>(a, b, m, n);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -115,6 +116,7 @@ void transpose_gpu_2(const float *a, float *b, const int m, const int n) {
   dim3 block_dim(TILE_DIM, TILE_DIM);
 
   transpose_kernel_gpu_2<<<grid_dim, block_dim>>>(a, b, m, n);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -123,6 +125,7 @@ void transpose_gpu_3(const float *a, float *b, const int m, const int n) {
   dim3 block_dim(TILE_DIM, TILE_DIM);
 
   transpose_kernel_gpu_3<<<grid_dim, block_dim>>>(a, b, m, n);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -131,6 +134,7 @@ void transpose_gpu_4(const float *a, float *b, const int m, const int n) {
   dim3 block_dim(TILE_DIM, TILE_DIM);
 
   transpose_kernel_gpu_4<<<grid_dim, block_dim>>>(a, b, m, n);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 

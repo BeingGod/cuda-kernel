@@ -89,6 +89,7 @@ void elementwise_add_gpu_naive(const float *a, const float *b, float *c,
                                size_t len) {
   elementwise_add_kernel_gpu_naive<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(
       a, b, c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -96,6 +97,7 @@ void elementwise_add_gpu_1(const float *a, const float *b, float *c,
                            size_t len) {
   elementwise_add_kernel_gpu_opt1<<<BLOCKS_PER_GRID(len) / 4,
                                     THREADS_PER_BLOCK>>>(a, b, c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -103,6 +105,7 @@ void elementwise_add_gpu_2(const float *a, const float *b, float *c,
                            size_t len) {
   elementwise_add_kernel_gpu_opt2<<<BLOCKS_PER_GRID(len), THREADS_PER_BLOCK>>>(
       a, b, c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -110,6 +113,7 @@ void elementwise_add_gpu_3(const float *a, const float *b, float *c,
                            size_t len) {
   elementwise_add_kernel_gpu_opt3<<<BLOCKS_PER_GRID(len) / 4,
                                     THREADS_PER_BLOCK>>>(a, b, c, len);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 

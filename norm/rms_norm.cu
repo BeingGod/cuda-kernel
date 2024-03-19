@@ -167,6 +167,7 @@ void rms_norm_gpu_1(float *out, const float *input, const float *weight,
                     const int hidden_size) {
   rms_norm_kernel_gpu<<<num_tokens, std::min(hidden_size, 1024)>>>(
       out, input, weight, epsilon, num_tokens, hidden_size);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
@@ -177,6 +178,7 @@ void rms_norm_gpu_2(float *out, const float *input, const float *weight,
 
   rms_norm_kernel_gpu_vec4<<<num_tokens, std::min(hidden_size, 1024)>>>(
       out, input, weight, epsilon, num_tokens, hidden_size);
+  cudaStreamSynchronize(0);
   CHECK_CUDA_ERROR(cudaGetLastError());
 }
 
